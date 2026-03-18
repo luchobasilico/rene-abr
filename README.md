@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Escriba Médico Ambiental
 
-## Getting Started
+MVP de un escriba médico con IA para automatizar la documentación de consultas médicas en Argentina y LATAM.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Frontend**: Next.js 14, Tailwind CSS, Zustand
+- **Backend**: Node.js, Clean Architecture
+- **Base de datos**: PostgreSQL + Prisma
+- **ASR**: AssemblyAI (transcripción + diarización)
+- **LLM**: OpenAI GPT-4
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Requisitos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Node.js 18+
+- PostgreSQL (o [Prisma Postgres](https://www.prisma.io/docs/orm/overview/databases/prisma-postgres) con `npx prisma dev`)
+- Cuentas en [AssemblyAI](https://www.assemblyai.com/) y [OpenAI](https://platform.openai.com/)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Configuración
 
-## Learn More
+1. Copiar `.env.example` a `.env`
+2. Configurar variables:
+   - `ASSEMBLYAI_API_KEY`
+   - `OPENAI_API_KEY`
+   - `DATABASE_URL` (PostgreSQL)
 
-To learn more about Next.js, take a look at the following resources:
+3. Ejecutar migraciones:
+   ```bash
+   npx prisma migrate dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Iniciar el proyecto:
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Flujo
 
-## Deploy on Vercel
+1. **Grabar** (`/`): Grabar consulta con el micrófono
+2. **Procesar**: Audio → AssemblyAI (ASR + diarización) → OpenAI (SOAP, recetas, órdenes)
+3. **Dashboard** (`/dashboard`): Ver consultas, editar nota, copiar para WhatsApp
+4. **Evidencia enlazada** (`/linked-evidence`): Mapeo nota ↔ transcripción
+5. **Firmar**: Guardar versión final
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Política de retención
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+El audio se elimina en 30 días. Los datos estructurados (nota, recetas, órdenes) se conservan.

@@ -1,0 +1,9 @@
+export { createPatientRepository } from "./patientRepository";
+export { createVisitRepository } from "./visitRepository";
+export { createTranscriptRepository } from "./transcriptRepository";
+export { createNoteRepository } from "./noteRepository";
+export { createPrescriptionRepository } from "./prescriptionRepository";
+export { createMedicalOrderRepository } from "./medicalOrderRepository";
+export { createPatientSummaryRepository } from "./patientSummaryRepository";
+export { createReferralRepository } from "./referralRepository";
+export { createJustificationRepository } from "./justificationRepository";

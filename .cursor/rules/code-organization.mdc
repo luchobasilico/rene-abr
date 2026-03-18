@@ -1,0 +1,37 @@
+---
+description: Organización y escalabilidad del código
+alwaysApply: true
+---
+
+# Organización del código
+
+## Principios
+
+1. **Un archivo, una responsabilidad** - Si supera ~150-200 líneas, dividir en subcomponentes o módulos.
+2. **Carpetas por feature** - Cada feature en su carpeta (recorder, consultation, linked-evidence, etc.).
+3. **Componentes pequeños** - Extraer subcomponentes en archivos separados dentro del feature.
+4. **Sin lógica en UI** - Lógica en hooks o servicios; componentes solo presentación.
+5. **Tipos en shared-types** - Tipos compartidos centralizados.
+6. **Nombres claros** - Archivos y componentes con nombres que expliquen su rol.
+
+## Estructura de carpetas
+
+```
+src/
+├── app/              # Rutas y páginas
+├── features/         # Por dominio (recorder, consultation, linked-evidence)
+├── shared/           # Compartido (components, ui, hooks, store)
+├── domain/           # Entidades y contratos
+├── application/      # Casos de uso
+├── lib/              # Utilidades
+services/             # Servicios aislados (audio-processing, ai-orchestrator)
+repositories/         # Acceso a datos
+shared-types/         # Tipos compartidos
+```
+
+## Al agregar código nuevo
+
+- Crear archivo en la carpeta correspondiente al feature o capa.
+- Extraer subcomponentes si el archivo crece.
+- Reutilizar tipos de shared-types.
+- Mantener archivos bajo 300 líneas (límite de la arquitectura).

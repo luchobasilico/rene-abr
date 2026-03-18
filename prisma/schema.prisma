@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Professional {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  email        String   @unique
+  name         String
+  passwordHash String
+  patients     Patient[]
+  visits       Visit[]
+}
+
+model Patient {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  name           String
+  birthDate      DateTime?
+  document       String?
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  visits         Visit[]
+}
+
+model Visit {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  signedAt       DateTime?
+  patientId      String
+  patient        Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  transcript  Transcript?
+  note        Note?
+  prescriptions Prescription[]
+  medicalOrders MedicalOrder[]
+  patientSummary PatientSummary?
+  referral    Referral?
+  justification Justification?
+}
+
+model Transcript {
+  id        String   @id @default(cuid())
+  visitId   String   @unique
+  visit     Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  segments  TranscriptSegment[]
+  audioUrl  String?
+  audioExpiresAt DateTime?
+}
+
+model TranscriptSegment {
+  id           String   @id @default(cuid())
+  transcriptId String
+  transcript   Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  speaker      String
+  timestampStart Int
+  timestampEnd   Int
+  text        String
+  confidence  Float?
+  lowConfidence Boolean @default(false)
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  visitId   String   @unique
+  visit     Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  subjective String
+  objective  String
+  assessment String
+  plan      String
+}
+
+model Prescription {
+  id        String   @id @default(cuid())
+  visitId   String
+  visit     Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  drug      String
+  dose      String
+  frequency String
+  route     String
+  duration  String
+}
+
+model MedicalOrder {
+  id          String   @id @default(cuid())
+  visitId     String
+  visit       Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  type        String
+  description String
+}
+
+model PatientSummary {
+  id      String   @id @default(cuid())
+  visitId String   @unique
+  visit   Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  text    String
+}
+
+model Referral {
+  id         String   @id @default(cuid())
+  visitId    String   @unique
+  visit      Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  text       String
+  specialist String?
+}
+
+model Justification {
+  id      String   @id @default(cuid())
+  visitId String   @unique
+  visit   Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  text    String
+}
+
+model LinkedEvidence {
+  id            String   @id @default(cuid())
+  segmentId     String
+  noteBlockType String
+}

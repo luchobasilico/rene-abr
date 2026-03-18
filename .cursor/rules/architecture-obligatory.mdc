@@ -1,0 +1,51 @@
+---
+description: Arquitectura obligatoria del proyecto - Clean Architecture, capas, servicios
+alwaysApply: true
+---
+
+# ARQUITECTURA OBLIGATORIA (CRÍTICO)
+
+## 1. BACKEND (Clean Architecture simplificada)
+
+Estructura obligatoria:
+- /src/domain → lógica de negocio pura (entidades médicas)
+- /src/application → casos de uso (procesar consulta, generar SOAP, etc.)
+- /src/infrastructure → integraciones externas (ASR, LLM, DB)
+- /src/interfaces → endpoints (API)
+
+Reglas: domain NO depende de nada externo. application solo usa domain. infrastructure implementa interfaces. interfaces conecta todo. NO mezclar lógica clínica con llamadas a APIs externas.
+
+## 2. FRONTEND (arquitectura por features)
+
+- /features: recorder, consultation, linked-evidence, patients
+- /shared: components, ui, hooks, store
+
+Reglas: Componentes UI separados de lógica. Estado global con Zustand. Evitar props drilling.
+
+## 3. TIPADO Y CONTRATOS
+
+/shared-types con tipos: TranscriptSegment, SOAPNote, Prescription, MedicalOrder. Backend devuelve JSON estrictamente tipado.
+
+## 4. PIPELINE DE AUDIO (servicio aislado)
+
+/services/audio-processing: preprocessAudio(), transcribe(), diarize(), alignSegments(). NO mezclar con lógica clínica.
+
+## 5. ORQUESTADOR DE IA
+
+/services/ai-orchestrator: construir prompts, llamar LLM, validar outputs, mapear a tipos internos. NO usar LLM directamente desde endpoints.
+
+## 6. BASE DE DATOS
+
+/repositories: patientRepository, visitRepository, transcriptRepository. NO queries directas desde endpoints.
+
+## 7. FLUJO PRINCIPAL
+
+processMedicalVisit(): audio → pipeline audio → transcript → IA → outputs → persistir → respuesta
+
+## 8. PROHIBICIONES
+
+NO: mezclar frontend y backend; lógica clínica en UI; llamadas directas a APIs en múltiples lugares; duplicar lógica; archivos >300 líneas.
+
+## 9. PRINCIPIO CLAVE
+
+Una responsabilidad por módulo. Si un archivo hace más de una cosa → mal diseñado.

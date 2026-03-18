@@ -1,0 +1,27 @@
+---
+description: Especificación del producto Escriba Médico Ambiental
+alwaysApply: false
+---
+
+# Escriba Médico Ambiental - MVP
+
+Producto para automatizar documentación de consultas médicas en Argentina/LATAM.
+
+## Módulos
+
+1. **Captura de audio, ASR y diarización**: Pipeline 7 etapas (preprocesamiento, transcripción, diarización, alineación, clasificación roles, post-procesamiento, output)
+2. **Generación clínica (SOAP)**: Subjetivo, Objetivo, Evaluación, Plan
+3. **Evidencia enlazada**: Mapeo nota ↔ transcripción, click → highlight, sync audio
+4. **Recetas y órdenes**: Fármaco, dosis, frecuencia, vía, duración; laboratorio, imágenes, interconsultas
+5. **Documentos derivados**: Resumen paciente, carta derivación, justificación obra social
+6. **Revisión y firma**: Editable, firmar, eliminar audio en 30 días
+
+## UI
+
+- Pantalla 1: Grabación (fondo durazno, waveform, timer)
+- Pantalla 2: Dashboard 2 columnas (lista consultas | nota + audio + paneles)
+- Pantalla 3: Evidencia enlazada (split view)
+
+## Colores médicos
+
+Medicamentos rosa, diagnósticos violeta, procedimientos azul, alertas rojo suave, recomendaciones verde.
