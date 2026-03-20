@@ -4,6 +4,7 @@ import type {
   Prescription,
   MedicalOrder,
   PatientSummary,
+  AgentActivationDecision,
 } from "@shared-types";
 
 export interface PatientEntity {
@@ -66,4 +67,8 @@ export interface IMedicalOrderRepository {
 export interface IPatientSummaryRepository {
   create(data: { visitId: string; text: string }): Promise<void>;
   findByVisitId(visitId: string): Promise<PatientSummary | null>;
+}
+
+export interface IAgentDecisionRepository {
+  createMany(data: { visitId: string; decisions: AgentActivationDecision[] }): Promise<void>;
 }

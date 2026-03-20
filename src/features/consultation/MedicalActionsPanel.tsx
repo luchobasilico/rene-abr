@@ -1,34 +1,37 @@
 "use client";
 
-import { useState } from "react";
 import { EstudiosOrdenesSection } from "./EstudiosOrdenesSection";
 import { MedicalDocumentsSection } from "./MedicalDocumentsSection";
+import { useMedicalActionsPanel } from "./hooks/useMedicalActionsPanel";
+import { StudiesAnalysisSection } from "./StudiesAnalysisSection";
 
-type TabId = "recetas_ordenes" | "resumen" | "documentos";
+export type MedicalActionsTabId =
+  | "recetas_ordenes"
+  | "resumen"
+  | "documentos"
+  | "analisis_ec"
+  | "analisis_clinico";
 
 interface MedicalActionsPanelProps {
-  prescriptions: Array<{ drug: string; dose: string; frequency: string; route: string; duration: string }>;
-  medicalOrders: Array<{ type: string; description: string }>;
+  extractedActions: {
+    medications: Array<{ drug: string; dose: string; frequency: string; route: string; duration: string }>;
+    studies: Array<{ type: string; description: string }>;
+  };
   patientSummary: string | null;
+  initialTab?: MedicalActionsTabId;
 }
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "recetas_ordenes", label: "Recetas / Órdenes" },
-  { id: "resumen", label: "Resumen del paciente" },
-  { id: "documentos", label: "Documentos médicos" },
-];
-
 export function MedicalActionsPanel({
-  prescriptions,
-  medicalOrders,
+  extractedActions,
   patientSummary,
+  initialTab,
 }: MedicalActionsPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("recetas_ordenes");
+  const { activeTab, setActiveTab, tabs } = useMedicalActionsPanel({ initialTab });
 
   return (
     <div className="bg-white border border-rene-aquaDark/40 rounded-lg overflow-hidden flex flex-col">
       <div className="flex flex-wrap gap-x-1 border-b border-rene-aquaDark/40 shrink-0">
-        {TABS.map(({ id, label }) => (
+        {tabs.map(({ id, label }) => (
           <button
             key={id}
             type="button"
@@ -46,8 +49,8 @@ export function MedicalActionsPanel({
       <div className="p-4">
         {activeTab === "recetas_ordenes" && (
           <EstudiosOrdenesSection
-            prescriptions={prescriptions}
-            medicalOrders={medicalOrders}
+            prescriptions={extractedActions.medications}
+            medicalOrders={extractedActions.studies}
           />
         )}
         {activeTab === "resumen" && (
@@ -56,6 +59,18 @@ export function MedicalActionsPanel({
           </div>
         )}
         {activeTab === "documentos" && <MedicalDocumentsSection />}
+        {activeTab === "analisis_ec" && (
+          <StudiesAnalysisSection studies={extractedActions.studies} />
+        )}
+        {activeTab === "analisis_clinico" && (
+          <div className="text-sm text-gray-700 space-y-2">
+            <p className="font-medium text-rene-greenDark">Análisis clínico</p>
+            <p>
+              Backlog `UI-002`: interpretación clínica consolidada, alertas y hallazgos relevantes
+              para apoyo a la decisión médica.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

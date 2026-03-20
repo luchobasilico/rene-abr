@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/shared/ui/Modal";
 import { SidebarMenuIcon, type SidebarIconName } from "@/shared/components/sidebarIcons";
+import { QuickRecipesOrdersModal } from "@/features/consultation/QuickRecipesOrdersModal";
 
 interface SidebarPanelProps {
   isOpen: boolean;
@@ -109,8 +110,19 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
       section: "Redactar con IA",
       tone: "ai",
       items: [
-        { label: "Recetas y Órdenes", icon: "recetas", action: () => openStubModal("recetas") },
-        { label: "Documentos médicos", icon: "documentos", action: () => openStubModal("documentos") },
+        {
+          label: "Recetas y Órdenes",
+          icon: "recetas",
+          action: () => openStubModal("recetas"),
+        },
+        {
+          label: "Documentos médicos",
+          icon: "documentos",
+          action: () => {
+            router.push("/dashboard?today=1&open=documentos");
+            onClose();
+          },
+        },
       ],
     },
     {
@@ -120,7 +132,10 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
         {
           label: "Imágenes, laboratorio, dermatología, cardiológico",
           icon: "estudios",
-          action: () => openStubModal("analisis"),
+          action: () => {
+            router.push("/dashboard?today=1&open=analisis_ec");
+            onClose();
+          },
         },
       ],
     },
@@ -231,41 +246,33 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
         </nav>
       </aside>
 
-      <Modal isOpen={openModal === "recetas"} onClose={closeModal} title="Recetas y Órdenes">
-        <p className="text-gray-600">En desarrollo</p>
-      </Modal>
-      <Modal isOpen={openModal === "documentos"} onClose={closeModal} title="Documentos médicos">
-        <p className="text-gray-600">En desarrollo</p>
-      </Modal>
-      <Modal isOpen={openModal === "analisis"} onClose={closeModal} title="Análisis de Estudios con IA">
-        <p className="text-gray-600">En desarrollo</p>
-      </Modal>
+      <QuickRecipesOrdersModal isOpen={openModal === "recetas"} onClose={closeModal} />
       <Modal isOpen={openModal === "pacientes"} onClose={closeModal} title="Gestionar pacientes">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-004`.</p>
       </Modal>
       <Modal isOpen={openModal === "vademecum"} onClose={closeModal} title="Vademécum">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-005`.</p>
       </Modal>
       <Modal isOpen={openModal === "interacciones"} onClose={closeModal} title="Interacciones medicamentosas">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-005`.</p>
       </Modal>
       <Modal isOpen={openModal === "calculadoras"} onClose={closeModal} title="Calculadoras médicas">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-005`.</p>
       </Modal>
       <Modal isOpen={openModal === "guias"} onClose={closeModal} title="Guías y Protocolos">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-006`.</p>
       </Modal>
       <Modal isOpen={openModal === "agenda"} onClose={closeModal} title="Agenda de hoy">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-007`.</p>
       </Modal>
       <Modal isOpen={openModal === "turno"} onClose={closeModal} title="Programar nuevo turno">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-007`.</p>
       </Modal>
       <Modal isOpen={openModal === "horarios"} onClose={closeModal} title="Configurar horarios">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-007`.</p>
       </Modal>
       <Modal isOpen={openModal === "pagos"} onClose={closeModal} title="Gestión de pagos">
-        <p className="text-gray-600">En desarrollo</p>
+        <p className="text-gray-600">Backlog `UI-007`.</p>
       </Modal>
     </>
   );

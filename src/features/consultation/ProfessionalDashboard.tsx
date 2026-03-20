@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { VisitDetail } from "./VisitDetail";
+import type { MedicalActionsTabId } from "./MedicalActionsPanel";
 import { useConsultationStore } from "@/shared/store/useConsultationStore";
-import { mergeVisitDetailForProcessing } from "@/lib/mergeVisitDetailForProcessing";
+import { useVisitDetailLoader } from "./hooks/useVisitDetailLoader";
 
 interface ProfessionalDashboardProps {
   initialVisitId?: string | null;
   /** Solo listar consultas del día actual (zona horaria del navegador). */
   onlyToday?: boolean;
+  initialActionsTab?: MedicalActionsTabId;
 }
 
 function isSameLocalCalendarDay(isoDate: string, reference: Date): boolean {
@@ -35,7 +37,11 @@ interface VisitItem {
   signedAt?: string;
 }
 
-export function ProfessionalDashboard({ initialVisitId, onlyToday = false }: ProfessionalDashboardProps) {
+export function ProfessionalDashboard({
+  initialVisitId,
+  onlyToday = false,
+  initialActionsTab,
+}: ProfessionalDashboardProps) {
   const { selectedVisit, setSelectedVisit, processing, clearProcessing } = useConsultationStore();
   const [patients, setPatients] = useState<PatientItem[]>([]);
   const [visits, setVisits] = useState<VisitItem[]>([]);
@@ -44,6 +50,7 @@ export function ProfessionalDashboard({ initialVisitId, onlyToday = false }: Pro
   const [loading, setLoading] = useState(!!initialVisitId);
   /** En "Consultas de hoy": evita reabrir sola la 1.ª visita si el usuario cerró el detalle a propósito. */
   const skipAutoOpenVisitRef = useRef(false);
+  const loadVisitDetail = useVisitDetailLoader(setLoading);
 
   const visitsInScope = useMemo(() => {
     if (!onlyToday) return visits;
@@ -65,25 +72,6 @@ export function ProfessionalDashboard({ initialVisitId, onlyToday = false }: Pro
     [selectedPatientId, visitsInScope]
   );
   const showBrowsePanel = !initialVisitId;
-
-  const loadVisitDetail = async (visitId: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/visits/${visitId}`);
-      const detail = await response.json();
-      const store = useConsultationStore.getState();
-      const merged = mergeVisitDetailForProcessing(
-        detail,
-        store.selectedVisit,
-        store.processing.active
-      );
-      setSelectedVisit(merged);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +116,7 @@ export function ProfessionalDashboard({ initialVisitId, onlyToday = false }: Pro
     } else if (!initialVisitId) {
       setLoading(false);
     }
-  }, [initialVisitId, selectedVisit]);
+  }, [initialVisitId, loadVisitDetail, selectedVisit]);
 
   useEffect(() => {
     if (!selectedVisit) return;
@@ -164,7 +152,7 @@ export function ProfessionalDashboard({ initialVisitId, onlyToday = false }: Pro
     if (current?.patient.id === selectedPatientId) return;
 
     void loadVisitDetail(mostRecent.id);
-  }, [onlyToday, loadingLists, selectedPatientId, visitsInScope, initialVisitId]);
+  }, [onlyToday, loadingLists, selectedPatientId, visitsInScope, initialVisitId, loadVisitDetail]);
 
   return (
     <div className="min-h-full flex" style={{ backgroundColor: "#f0fdfa" }}>
@@ -268,6 +256,7 @@ export function ProfessionalDashboard({ initialVisitId, onlyToday = false }: Pro
         {selectedVisit ? (
           <VisitDetail
             visit={selectedVisit}
+            initialActionsTab={initialActionsTab}
             onClose={() => {
               if (onlyToday) skipAutoOpenVisitRef.current = true;
               setSelectedVisit(null);

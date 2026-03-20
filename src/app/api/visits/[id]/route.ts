@@ -24,6 +24,7 @@ export async function GET(
         patientSummary: true,
         referral: true,
         justification: true,
+        agentDecisions: { orderBy: { createdAt: "asc" } },
       },
     });
 
@@ -54,9 +55,29 @@ export async function GET(
             })),
           }
         : null,
-      prescriptions: visit.prescriptions,
-      medicalOrders: visit.medicalOrders,
+      extractedActions: {
+        medications: visit.prescriptions.map((p) => ({
+          drug: p.drug,
+          dose: p.dose,
+          frequency: p.frequency,
+          route: p.route,
+          duration: p.duration,
+        })),
+        studies: visit.medicalOrders.map((o) => ({
+          type: o.type,
+          description: o.description,
+        })),
+        documents: [],
+        followups: [],
+      },
       patientSummary: visit.patientSummary?.text ?? null,
+      agentAudit: visit.agentDecisions.map((d) => ({
+        agentKey: d.agentKey,
+        activated: d.activated,
+        reason: d.reason,
+        matchedPattern: d.matchedPattern ?? undefined,
+        source: d.source,
+      })),
       referral: visit.referral ? { text: visit.referral.text, specialist: visit.referral.specialist ?? undefined } : undefined,
       justification: visit.justification ? { text: visit.justification.text } : undefined,
       signedAt: visit.signedAt,

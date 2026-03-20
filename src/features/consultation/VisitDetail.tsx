@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { NotesLeftPanel } from "./NotesLeftPanel";
 import { MedicalActionsPanel } from "./MedicalActionsPanel";
+import type { MedicalActionsTabId } from "./MedicalActionsPanel";
 import { useConsultationStore } from "@/shared/store/useConsultationStore";
-import type { VisitPatient } from "@/shared/store/useConsultationStore";
+import type { VisitDetail as VisitDetailModel, VisitPatient } from "@shared-types";
 import { Modal } from "@/shared/ui/Modal";
 
 const SOAP_BLOCK_ORDER = ["subjective", "objective", "assessment", "plan"] as const;
@@ -14,19 +15,9 @@ const TYPEWRITER_INTERVAL_MS = 22;
 const TYPEWRITER_CHARS_PER_TICK = 14;
 
 interface VisitDetailProps {
-  visit: {
-    id: string;
-    patient: VisitPatient;
-    soap: { subjective: string; objective: string; assessment: string; plan: string } | null;
-    transcript: { segments: Array<{ speaker: string; timestampStart: number; timestampEnd: number; text: string }> } | null;
-    prescriptions: Array<{ drug: string; dose: string; frequency: string; route: string; duration: string }>;
-    medicalOrders: Array<{ type: string; description: string }>;
-    patientSummary: string | null;
-    referral?: { text: string; specialist?: string };
-    justification?: { text: string };
-    signedAt?: string;
-  };
+  visit: VisitDetailModel;
   onClose: () => void;
+  initialActionsTab?: MedicalActionsTabId;
 }
 
 type PatientApi = VisitPatient;
@@ -75,7 +66,7 @@ function PatientDetailBody({ patient }: { patient: PatientApi | null }) {
   );
 }
 
-export function VisitDetail({ visit }: VisitDetailProps) {
+export function VisitDetail({ visit, initialActionsTab }: VisitDetailProps) {
   const { processing, clearProcessing } = useConsultationStore();
   const [soap, setSoap] = useState(visit.soap ?? {
     subjective: "",
@@ -234,6 +225,7 @@ export function VisitDetail({ visit }: VisitDetailProps) {
                 onSoapChange={setSoap}
                 onSave={handleSave}
                 transcript={visit.transcript}
+                extractedStudies={visit.extractedActions.studies}
                 isProcessing={processing.active}
                 processingStage={processing.stage}
               />
@@ -241,9 +233,9 @@ export function VisitDetail({ visit }: VisitDetailProps) {
           </div>
           <div className="w-full lg:w-1/2 flex flex-col lg:self-start">
             <MedicalActionsPanel
-              prescriptions={visit.prescriptions}
-              medicalOrders={visit.medicalOrders}
+              extractedActions={visit.extractedActions}
               patientSummary={visit.patientSummary}
+              initialTab={initialActionsTab}
             />
           </div>
         </div>

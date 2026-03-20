@@ -53,6 +53,7 @@ model Visit {
   patientSummary PatientSummary?
   referral    Referral?
   justification Justification?
+  agentDecisions AgentDecision[]
 }
 
 model Transcript {
@@ -131,4 +132,16 @@ model LinkedEvidence {
   id            String   @id @default(cuid())
   segmentId     String
   noteBlockType String
+}
+
+model AgentDecision {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  visitId        String
+  visit          Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  agentKey       String
+  activated      Boolean
+  reason         String
+  matchedPattern String?
+  source         String
 }

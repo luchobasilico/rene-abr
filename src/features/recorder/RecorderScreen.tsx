@@ -4,13 +4,14 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PatientManagementModal } from "./components/PatientManagementModal";
 import { useConsultationStore } from "@/shared/store/useConsultationStore";
-import { mergeVisitDetailForProcessing } from "@/lib/mergeVisitDetailForProcessing";
+import { useVisitDetailLoader } from "@/features/consultation/hooks/useVisitDetailLoader";
 import { WaveformAnimation } from "./components/WaveformAnimation";
 import { useAudioLevelMeter } from "./hooks/useAudioLevelMeter";
 import { createPatientApi, fetchPatients } from "./services/patientsApi";
 import { buildWhatsappInviteMessage, parseQrPatientData } from "./utils/patientUtils";
 import { createPatientSchema } from "@/shared/validation/patient";
 import type { AddPatientOption, CreatePatientInput, PatientFormFields, PatientModalView, PatientOption, RecordingState } from "./types";
+import type { ProcessStreamEvent } from "@shared-types";
 
 /** Texto del pie en la pantalla de procesamiento (el cartel superior solo muestra paciente + barra). */
 function getRecorderFooterStatus(p: {
@@ -74,6 +75,7 @@ export function RecorderScreen() {
   const { audioLevel, hasAudioSignal, startAudioMeter, stopAudioMeter } = useAudioLevelMeter();
   const { processing, setProcessing, setSelectedVisit } = useConsultationStore();
   const router = useRouter();
+  const loadVisitDetail = useVisitDetailLoader();
 
   const loadPatients = useCallback(async () => {
     setIsLoadingPatients(true);
@@ -245,23 +247,6 @@ export function RecorderScreen() {
       const decoder = new TextDecoder();
       let pending = "";
 
-      const loadVisitDetail = async (visitId: string) => {
-        try {
-          const detailRes = await fetch(`/api/visits/${visitId}`);
-          if (!detailRes.ok) return;
-          const detail = await detailRes.json();
-          const store = useConsultationStore.getState();
-          const merged = mergeVisitDetailForProcessing(
-            detail,
-            store.selectedVisit,
-            store.processing.active
-          );
-          setSelectedVisit(merged);
-        } catch {
-          // ignore detail polling errors
-        }
-      };
-
       const mergeVisitPartial = (visitId: string, partial: Record<string, unknown>) => {
         const store = useConsultationStore.getState();
         const current = store.selectedVisit;
@@ -294,22 +279,7 @@ export function RecorderScreen() {
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed) continue;
-          const event = JSON.parse(trimmed) as
-            | {
-                type: "progress";
-                stage: string;
-                visitId?: string;
-                transcript?: { speaker: string; timestampStart: number; timestampEnd: number; text: string }[];
-                soap?: { subjective: string; objective: string; assessment: string; plan: string };
-                soapBlock?: "subjective" | "objective" | "assessment" | "plan";
-                recipes?: { drug: string; dose: string; frequency: string; route: string; duration: string }[];
-                orders?: { type: string; description: string }[];
-                patientSummary?: { text: string };
-                referral?: { text: string; specialist?: string };
-                justification?: { text: string };
-              }
-            | { type: "done"; result: { visitId: string } }
-            | { type: "error"; message: string };
+          const event = JSON.parse(trimmed) as ProcessStreamEvent;
 
           if (event.type === "progress") {
             if (event.stage === "visit_created" && event.visitId) {
@@ -330,8 +300,12 @@ export function RecorderScreen() {
                 },
                 soap: null,
                 transcript: null,
-                prescriptions: [],
-                medicalOrders: [],
+                extractedActions: {
+                  medications: [],
+                  studies: [],
+                  documents: [],
+                  followups: [],
+                },
                 patientSummary: null,
               });
             }
@@ -383,11 +357,26 @@ export function RecorderScreen() {
                     patientLabel,
                   });
                 }
-                if (event.recipes) {
-                  mergeVisitPartial(event.visitId, { prescriptions: event.recipes });
+                if (event.medications) {
+                  mergeVisitPartial(event.visitId, {
+                    extractedActions: {
+                      medications: event.medications,
+                      studies: event.studies ?? [],
+                      documents: [],
+                      followups: [],
+                    },
+                  });
                 }
-                if (event.orders) {
-                  mergeVisitPartial(event.visitId, { medicalOrders: event.orders });
+                if (event.studies) {
+                  const current = useConsultationStore.getState().selectedVisit;
+                  mergeVisitPartial(event.visitId, {
+                    extractedActions: {
+                      medications: current?.extractedActions?.medications ?? [],
+                      studies: event.studies,
+                      documents: [],
+                      followups: [],
+                    },
+                  });
                 }
                 if (event.patientSummary) {
                   mergeVisitPartial(event.visitId, { patientSummary: event.patientSummary.text });
@@ -457,7 +446,7 @@ export function RecorderScreen() {
       setError(err instanceof Error ? err.message : "Error al procesar");
       setState("idle");
     }
-  }, [selectedPatient, setProcessing, setSelectedVisit, stopAudioMeter, stopTimer, router]);
+  }, [selectedPatient, setProcessing, setSelectedVisit, stopAudioMeter, stopTimer, router, loadVisitDetail]);
 
   const createPatient = useCallback(async () => {
     const form: PatientFormFields = {

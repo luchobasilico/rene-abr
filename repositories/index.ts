@@ -7,3 +7,4 @@ export { createMedicalOrderRepository } from "./medicalOrderRepository";
 export { createPatientSummaryRepository } from "./patientSummaryRepository";
 export { createReferralRepository } from "./referralRepository";
 export { createJustificationRepository } from "./justificationRepository";
+export { createAgentDecisionRepository } from "./agentDecisionRepository";

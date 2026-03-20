@@ -2,12 +2,15 @@ import OpenAI from "openai";
 import type {
   TranscriptSegment,
   SOAPNote,
-  Prescription,
-  MedicalOrder,
   PatientSummary,
   Referral,
   Justification,
   LinkedEvidence,
+  ExtractedActions,
+  ExtractedMedication,
+  ExtractedStudy,
+  ExtractedDocument,
+  sanitizeExtractedActions,
 } from "@shared-types";
 
 function getOpenAI() {
@@ -37,27 +40,6 @@ Si la transcripción no aporta datos para este bloque, devolvé {"text":""} sin 
 Responde con este JSON exacto:
 {"text":""}`;
 
-const PRESCRIPTIONS_SYSTEM = `Eres un asistente médico. Extrae las recetas de la transcripción.
-Usa nombres genéricos de fármacos cuando sea posible.
-No inventes medicación si no aparece en la transcripción.
-Responde ÚNICAMENTE con JSON válido.`;
-
-const PRESCRIPTIONS_USER = (transcript: string) => `Transcripción:
-${transcript}
-
-Extrae las recetas. Responde con JSON: {"prescriptions":[{"drug":"","dose":"","frequency":"","route":"","duration":""}]}
-Si no hay recetas, devuelve {"prescriptions":[]}`;
-
-const ORDERS_SYSTEM = `Eres un asistente médico. Extrae órdenes médicas: laboratorio, imágenes, interconsultas.
-No inventes órdenes que no figuren en la transcripción.
-Responde ÚNICAMENTE con JSON válido.`;
-
-const ORDERS_USER = (transcript: string) => `Transcripción:
-${transcript}
-
-Extrae órdenes. Responde con JSON: {"orders":[{"type":"lab"|"imaging"|"referral","description":""}]}
-Si no hay órdenes, devuelve {"orders":[]}`;
-
 const SUMMARY_SYSTEM = `Eres un asistente médico. Genera un resumen breve para el paciente en lenguaje simple, listo para enviar por WhatsApp.
 Máximo 3-4 oraciones. Español argentino coloquial.`;
 
@@ -67,6 +49,58 @@ ${transcript}
 Nota SOAP: ${soap}
 
 Genera resumen para paciente. Responde con JSON: {"text":""}`;
+
+const MEDICATION_ACTIONS_SYSTEM = `Eres un asistente médico que extrae únicamente medicaciones explícitas.
+No inventes medicaciones ausentes.
+Responde ÚNICAMENTE JSON válido.`;
+
+const MEDICATION_ACTIONS_USER = (transcript: string, soap?: SOAPNote) => `Transcripción:
+${transcript}
+
+Nota SOAP (opcional):
+${JSON.stringify(soap ?? {})}
+
+Devuelve JSON: {"medications":[{"drug":"","dose":"","frequency":"","route":"","duration":""}]}
+Si no hay medicaciones, devuelve {"medications":[]}.`;
+
+const STUDIES_ACTIONS_SYSTEM = `Eres un asistente médico que extrae únicamente estudios/órdenes explícitas.
+No inventes estudios ausentes.
+Responde ÚNICAMENTE JSON válido.`;
+
+const STUDIES_ACTIONS_USER = (transcript: string, soap?: SOAPNote) => `Transcripción:
+${transcript}
+
+Nota SOAP (opcional):
+${JSON.stringify(soap ?? {})}
+
+Devuelve JSON: {"studies":[{"type":"lab"|"imaging"|"referral","description":""}]}
+Si no hay estudios, devuelve {"studies":[]}.`;
+
+const DOCUMENTS_ACTIONS_SYSTEM = `Eres un asistente médico que extrae únicamente documentos explícitos a generar.
+No inventes documentos ausentes.
+Responde ÚNICAMENTE JSON válido.`;
+
+const DOCUMENTS_ACTIONS_USER = (transcript: string, soap?: SOAPNote) => `Transcripción:
+${transcript}
+
+Nota SOAP (opcional):
+${JSON.stringify(soap ?? {})}
+
+Devuelve JSON: {"documents":[{"type":"certificate"|"report"|"administrative","title":"","rationale":""}]}
+Si no hay documentos, devuelve {"documents":[]}.`;
+
+const FOLLOWUPS_ACTIONS_SYSTEM = `Eres un asistente médico que extrae únicamente seguimientos explícitos.
+No inventes seguimientos ausentes.
+Responde ÚNICAMENTE JSON válido.`;
+
+const FOLLOWUPS_ACTIONS_USER = (transcript: string, soap?: SOAPNote) => `Transcripción:
+${transcript}
+
+Nota SOAP (opcional):
+${JSON.stringify(soap ?? {})}
+
+Devuelve JSON: {"followups":[""]}.
+Si no hay seguimientos, devuelve {"followups":[]}.`;
 
 function formatTranscript(segments: TranscriptSegment[]): string {
   return segments
@@ -115,22 +149,52 @@ export async function generateSOAPBlock(
   return result.text ?? "";
 }
 
-export async function generatePrescriptions(segments: TranscriptSegment[]): Promise<Prescription[]> {
+export async function generateMedicationActions(
+  segments: TranscriptSegment[],
+  soap?: SOAPNote
+): Promise<ExtractedMedication[]> {
   const transcript = formatTranscript(segments);
-  const result = await callLLM<{ prescriptions: Prescription[] }>(
-    PRESCRIPTIONS_SYSTEM,
-    PRESCRIPTIONS_USER(transcript)
+  const result = await callLLM<{ medications: ExtractedMedication[] }>(
+    MEDICATION_ACTIONS_SYSTEM,
+    MEDICATION_ACTIONS_USER(transcript, soap)
   );
-  return result.prescriptions ?? [];
+  return sanitizeExtractedActions({ medications: result.medications }).medications;
 }
 
-export async function generateMedicalOrders(segments: TranscriptSegment[]): Promise<MedicalOrder[]> {
+export async function generateStudiesActions(
+  segments: TranscriptSegment[],
+  soap?: SOAPNote
+): Promise<ExtractedStudy[]> {
   const transcript = formatTranscript(segments);
-  const result = await callLLM<{ orders: MedicalOrder[] }>(
-    ORDERS_SYSTEM,
-    ORDERS_USER(transcript)
+  const result = await callLLM<{ studies: ExtractedStudy[] }>(
+    STUDIES_ACTIONS_SYSTEM,
+    STUDIES_ACTIONS_USER(transcript, soap)
   );
-  return result.orders ?? [];
+  return sanitizeExtractedActions({ studies: result.studies }).studies;
+}
+
+export async function generateDocumentsActions(
+  segments: TranscriptSegment[],
+  soap?: SOAPNote
+): Promise<ExtractedDocument[]> {
+  const transcript = formatTranscript(segments);
+  const result = await callLLM<{ documents: ExtractedDocument[] }>(
+    DOCUMENTS_ACTIONS_SYSTEM,
+    DOCUMENTS_ACTIONS_USER(transcript, soap)
+  );
+  return sanitizeExtractedActions({ documents: result.documents }).documents;
+}
+
+export async function generateFollowupsActions(
+  segments: TranscriptSegment[],
+  soap?: SOAPNote
+): Promise<string[]> {
+  const transcript = formatTranscript(segments);
+  const result = await callLLM<{ followups: string[] }>(
+    FOLLOWUPS_ACTIONS_SYSTEM,
+    FOLLOWUPS_ACTIONS_USER(transcript, soap)
+  );
+  return sanitizeExtractedActions({ followups: result.followups }).followups;
 }
 
 export async function generatePatientSummary(

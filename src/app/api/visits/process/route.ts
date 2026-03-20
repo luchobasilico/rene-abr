@@ -25,6 +25,12 @@ export async function POST(request: Request) {
 
     const selectedPatientId =
       typeof patientId === "string" && patientId.trim() ? patientId.trim() : undefined;
+    if (!selectedPatientId) {
+      return NextResponse.json(
+        { error: "Se requiere paciente para procesar la consulta" },
+        { status: 400 }
+      );
+    }
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
@@ -37,7 +43,11 @@ export async function POST(request: Request) {
           try {
             const result = await processMedicalVisit(
               buffer,
-              professional.id,
+              {
+                id: professional.id,
+                name: professional.name,
+                email: professional.email,
+              },
               selectedPatientId,
               (event) => {
                 send({ type: "progress", ...event });

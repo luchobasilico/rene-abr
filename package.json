@@ -9,7 +9,8 @@
     "dev:clean:3002": "npx rimraf .next && next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -34,6 +35,7 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

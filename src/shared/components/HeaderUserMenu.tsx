@@ -100,13 +100,13 @@ export function HeaderUserMenu() {
       <Modal isOpen={profileModal} onClose={() => setProfileModal(false)} title="Mi perfil">
         <p className="text-sm text-gray-600">
           Aquí podrás editar tus datos profesionales, matrícula y firma digital.{" "}
-          <span className="text-gray-500">(En desarrollo)</span>
+          <span className="text-gray-500">(Backlog `UI-008`)</span>
         </p>
       </Modal>
       <Modal isOpen={prefsModal} onClose={() => setPrefsModal(false)} title="Preferencias de cuenta">
         <p className="text-sm text-gray-600">
           Notificaciones, idioma y privacidad.{" "}
-          <span className="text-gray-500">(En desarrollo)</span>
+          <span className="text-gray-500">(Backlog `UI-008`)</span>
         </p>
       </Modal>
     </>

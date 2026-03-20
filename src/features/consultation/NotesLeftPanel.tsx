@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { SOAPEditor } from "./SOAPEditor";
 import { LinkedEvidenceContent } from "@/features/linked-evidence/LinkedEvidenceContent";
+import { useNotesLeftPanel } from "./hooks/useNotesLeftPanel";
 
 interface SOAPNote {
   subjective: string;
@@ -23,18 +23,14 @@ interface NotesLeftPanelProps {
       text: string;
     }>;
   } | null;
+  extractedStudies?: Array<{
+    type: string;
+    description: string;
+  }>;
   /** Procesamiento en curso (esqueleto / hints en el editor SOAP). */
   isProcessing?: boolean;
   processingStage?: "idle" | "uploading" | "transcribing" | "generating" | "finalizing" | "error";
 }
-
-type TabId = "nota" | "transcripcion" | "evidencia";
-
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "nota", label: "Nota clínica" },
-  { id: "transcripcion", label: "Transcripción de la consulta" },
-  { id: "evidencia", label: "Evidencia enlazada" },
-];
 
 function speakerLabel(speaker: string): string {
   const s = speaker.toLowerCase();
@@ -48,17 +44,24 @@ export function NotesLeftPanel({
   onSoapChange,
   onSave,
   transcript,
+  extractedStudies = [],
   isProcessing = false,
   processingStage = "idle",
 }: NotesLeftPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("nota");
-  const hasTranscript = transcript?.segments && transcript.segments.length > 0;
-  const canShowEvidence = hasTranscript && soap && Object.values(soap).some((v) => v?.trim());
+  const {
+    tabs,
+    activeTab,
+    setActiveTab,
+    hasTranscript,
+    canShowEvidence,
+    hasMedicalOrders,
+    studiesWithTypeLabel,
+  } = useNotesLeftPanel({ soap, transcript, extractedStudies });
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white border border-rene-aquaDark/40 rounded-lg overflow-hidden">
       <div className="flex flex-wrap gap-x-1 border-b border-rene-aquaDark/40 shrink-0">
-        {TABS.map(({ id, label }) => (
+        {tabs.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
@@ -110,6 +113,33 @@ export function NotesLeftPanel({
                   Completá la nota clínica y asegurate de tener transcripción para ver la evidencia enlazada.
                 </p>
               </div>
+            )}
+          </div>
+        )}
+        {activeTab === "lectura_estudios" && (
+          <div className="h-full overflow-auto p-4 bg-rene-aqua/30">
+            {hasMedicalOrders ? (
+              <div className="space-y-3">
+                {studiesWithTypeLabel.map((order) => {
+                  return (
+                    <article
+                      key={order.key}
+                      className="rounded-lg border border-rene-aquaDark/40 bg-white p-3"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {order.typeLabel}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-800 whitespace-pre-wrap">
+                        {order.description}
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">
+                No hay estudios u órdenes cargadas para esta consulta.
+              </p>
             )}
           </div>
         )}
