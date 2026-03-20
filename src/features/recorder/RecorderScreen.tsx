@@ -614,7 +614,6 @@ export function RecorderScreen() {
       className="min-h-[calc(100vh-3.5rem)] bg-rene-aqua flex flex-col items-center justify-center p-6"
       style={{
         minHeight: "calc(100vh - 3.5rem)",
-        backgroundColor: "#f0fdfa",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

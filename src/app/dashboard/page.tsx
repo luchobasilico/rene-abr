@@ -8,8 +8,12 @@ import { ProfessionalDashboard } from "@/features/consultation/ProfessionalDashb
 function DashboardContent() {
   const searchParams = useSearchParams();
   const visitId = searchParams.get("visitId");
+  const onlyToday =
+    searchParams.get("today") === "1" ||
+    searchParams.get("today") === "true" ||
+    searchParams.get("today") === "yes";
 
-  return <ProfessionalDashboard initialVisitId={visitId} />;
+  return <ProfessionalDashboard initialVisitId={visitId} onlyToday={onlyToday} />;
 }
 
 export default function DashboardPage() {

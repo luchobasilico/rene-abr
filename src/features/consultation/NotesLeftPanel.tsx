@@ -57,12 +57,12 @@ export function NotesLeftPanel({
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white border border-rene-aquaDark/40 rounded-lg overflow-hidden">
-      <div className="flex border-b border-rene-aquaDark/40 shrink-0 overflow-x-auto">
+      <div className="flex flex-wrap gap-x-1 border-b border-rene-aquaDark/40 shrink-0">
         {TABS.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`px-3 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition ${
+            className={`inline-flex items-center justify-center min-h-11 h-11 px-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition box-border ${
               activeTab === id
                 ? "border-rene-green text-rene-green"
                 : "border-transparent text-gray-500 hover:text-gray-700"

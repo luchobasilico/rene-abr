@@ -90,7 +90,7 @@ export function LinkedEvidenceContent({
                 : "bg-rene-aqua/50 hover:bg-rene-aquaDark/30"
             }`}
           >
-            <h3 className="text-sm font-medium text-gray-600 mb-2">{label}</h3>
+            <h3 className="text-sm font-bold text-gray-800 mb-2">{label}</h3>
             <p className="text-sm whitespace-pre-wrap">{soap[key] ?? ""}</p>
           </div>
         ))}

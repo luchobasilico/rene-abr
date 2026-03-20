@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { SidebarPanel } from "./SidebarPanel";
+import { ReneLogo } from "./ReneLogo";
+import { HeaderUserMenu } from "./HeaderUserMenu";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -29,50 +31,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   const closePanel = () => setPanelOpen(false);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ minHeight: "100vh", backgroundColor: "#f0fdfa" }}>
+    <div className="min-h-screen flex flex-col bg-rene-aqua" style={{ minHeight: "100vh" }}>
       {/* Header fijo */}
       <header
-        className="fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 shrink-0 border-b border-gray-200"
+        className="fixed top-0 left-0 right-0 z-50 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-2 sm:px-4 shrink-0 border-b border-gray-200 bg-white/95 backdrop-blur-sm"
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
           height: "3.5rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 1rem",
-          backgroundColor: "rgba(255,255,255,0.95)",
           borderBottom: "1px solid #e5e7eb",
         }}
       >
-        <button
-          type="button"
-          onClick={togglePanel}
-          className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg touch-manipulation"
-          aria-label="Abrir menú"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
-        <h1 className="absolute left-1/2 -translate-x-1/2 font-semibold text-lg text-gray-800 pointer-events-none">
-          Rene
-        </h1>
-
-        <div className="flex items-center gap-2">
-          <a
-            href="/api/auth/signout?callbackUrl=/login"
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            aria-label="Cerrar sesión"
+        <div className="flex justify-start min-w-[2.75rem]">
+          <button
+            type="button"
+            onClick={togglePanel}
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg touch-manipulation"
+            aria-label="Abrir menú"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </a>
+          </button>
+        </div>
+
+        <div className="flex justify-center min-w-0 pointer-events-none [&>*]:pointer-events-auto">
+          <ReneLogo variant="header" />
+        </div>
+
+        <div className="flex justify-end min-w-0">
+          <HeaderUserMenu />
         </div>
       </header>
 

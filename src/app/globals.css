@@ -5,6 +5,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Marca RENÉ — mismo verde agua que el logo */
+  --rene-brand: #9fd3d5;
+  --rene-brand-deep: #5a9fa3;
 }
 
 @media (prefers-color-scheme: dark) {

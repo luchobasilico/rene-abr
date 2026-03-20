@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Escriba Médico Ambiental",
-  description: "Automatización de documentación clínica con IA",
+  title: "RENÉ — La IA al servicio de la Salud",
+  description: "Documentación clínica con inteligencia artificial",
 };
 
 export default function RootLayout({

@@ -92,7 +92,7 @@ export function SOAPEditor({
               className="border-b border-rene-aquaDark/20 last:border-0 last:pb-0"
             >
               <label
-                className={`block px-4 text-sm font-medium text-gray-600 ${
+                className={`block px-4 text-sm font-bold text-gray-800 ${
                   index === 0 ? "pt-1 pb-0.5" : "pt-2 pb-0.5"
                 }`}
               >

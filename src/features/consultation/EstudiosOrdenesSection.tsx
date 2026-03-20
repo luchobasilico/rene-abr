@@ -101,7 +101,7 @@ export function EstudiosOrdenesSection({
       <div>
         {prescriptions.length > 0 && (
           <div className="mb-3">
-            <h4 className="text-sm font-medium text-medical-medication mb-2">Medicación</h4>
+            <h4 className="text-sm font-semibold text-rene-greenDark mb-2">Medicación</h4>
             <ul className="space-y-1">
               {prescriptions.map((p, i) => {
                 const id = `rx-${i}`;
@@ -121,7 +121,7 @@ export function EstudiosOrdenesSection({
         )}
         {medicalOrders.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-medical-procedure mb-2">Estudios / Órdenes</h4>
+            <h4 className="text-sm font-semibold text-rene-greenDark mb-2">Estudios / Órdenes</h4>
             <ul className="space-y-1">
               {medicalOrders.map((o, i) => {
                 const id = `order-${i}`;

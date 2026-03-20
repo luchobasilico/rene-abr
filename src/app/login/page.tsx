@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ReneLogo } from "@/shared/components/ReneLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,16 +38,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f0fdfa",
-        padding: "1.5rem",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-rene-aqua p-6">
       <div
         style={{
           width: "100%",
@@ -57,17 +49,9 @@ export default function LoginPage() {
           boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
         }}
       >
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 600,
-            color: "#1f2937",
-            marginBottom: "1.5rem",
-            textAlign: "center",
-          }}
-        >
-          Rene
-        </h1>
+        <div className="mb-6 flex justify-center">
+          <ReneLogo variant="full" />
+        </div>
         <p
           style={{
             fontSize: "0.875rem",

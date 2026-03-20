@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Modal } from "@/shared/ui/Modal";
+import { SidebarMenuIcon, type SidebarIconName } from "@/shared/components/sidebarIcons";
 
 interface SidebarPanelProps {
   isOpen: boolean;
@@ -16,9 +16,37 @@ interface PanelStats {
   total_patients: number;
 }
 
+type MenuTone = "primary" | "ai" | "soft" | "neutral";
+
+interface MenuItem {
+  label: string;
+  icon: SidebarIconName;
+  action: () => void;
+}
+
+interface MenuGroup {
+  section: string;
+  tone: MenuTone;
+  items: MenuItem[];
+}
+
+const TONE_CARD: Record<MenuTone, string> = {
+  primary:
+    "border border-rene-aquaDark/35 border-l-[3px] border-l-rene-green bg-white shadow-sm",
+  ai: "border border-rene-aquaDark/35 border-l-[3px] border-l-rene-brandDeep bg-white/95 shadow-sm",
+  soft: "border border-rene-aquaDark/30 border-l-[3px] border-l-rene-brand bg-white/90",
+  neutral: "border border-rene-aquaDark/25 border-l-[3px] border-l-gray-400 bg-white/85",
+};
+
+const TONE_DOT: Record<MenuTone, string> = {
+  primary: "bg-rene-green",
+  ai: "bg-rene-brandDeep",
+  soft: "bg-rene-brand",
+  neutral: "bg-gray-400",
+};
+
 export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps) {
   const router = useRouter();
-  const { data: session } = useSession();
   const [stats, setStats] = useState<PanelStats>({ consultations_today: 0, total_patients: 0 });
   const [openModal, setOpenModal] = useState<string | null>(null);
 
@@ -54,21 +82,24 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
 
   const closeModal = () => setOpenModal(null);
 
-  const menuItems = [
+  const menuItems: MenuGroup[] = [
     {
       section: "Principal",
+      tone: "primary",
       items: [
         {
           label: "Nueva Nota Clínica",
+          icon: "note",
           action: () => {
             router.push("/");
             onClose();
           },
         },
         {
-          label: "Ver consultas",
+          label: "Consultas de hoy",
+          icon: "consultas",
           action: () => {
-            router.push("/dashboard");
+            router.push("/dashboard?today=1");
             onClose();
           },
         },
@@ -76,50 +107,50 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
     },
     {
       section: "Redactar con IA",
+      tone: "ai",
       items: [
-        { label: "Recetas y Órdenes", action: () => openStubModal("recetas") },
-        { label: "Documentos médicos", action: () => openStubModal("documentos") },
+        { label: "Recetas y Órdenes", icon: "recetas", action: () => openStubModal("recetas") },
+        { label: "Documentos médicos", icon: "documentos", action: () => openStubModal("documentos") },
       ],
     },
     {
-      section: "Análisis de Estudios con IA",
+      section: "Estudios con IA",
+      tone: "ai",
       items: [
-        { label: "Imágenes, laboratorio, dermatología, cardiológico", action: () => openStubModal("analisis") },
+        {
+          label: "Imágenes, laboratorio, dermatología, cardiológico",
+          icon: "estudios",
+          action: () => openStubModal("analisis"),
+        },
       ],
     },
     {
       section: "Pacientes",
-      items: [
-        { label: "Gestionar pacientes", action: () => openStubModal("pacientes") },
-      ],
+      tone: "soft",
+      items: [{ label: "Gestionar pacientes", icon: "pacientes", action: () => openStubModal("pacientes") }],
     },
     {
       section: "Fármacos",
+      tone: "soft",
       items: [
-        { label: "Vademécum", action: () => openStubModal("vademecum") },
-        { label: "Interacciones medicamentosas", action: () => openStubModal("interacciones") },
-        { label: "Calculadoras médicas", action: () => openStubModal("calculadoras") },
+        { label: "Vademécum", icon: "vademecum", action: () => openStubModal("vademecum") },
+        { label: "Interacciones medicamentosas", icon: "interacciones", action: () => openStubModal("interacciones") },
+        { label: "Calculadoras médicas", icon: "calculadoras", action: () => openStubModal("calculadoras") },
       ],
     },
     {
       section: "Guías y Protocolos",
-      items: [
-        { label: "Guías y Protocolos", action: () => openStubModal("guias") },
-      ],
+      tone: "neutral",
+      items: [{ label: "Ver guías y protocolos", icon: "guias", action: () => openStubModal("guias") }],
     },
     {
       section: "Consultorio",
+      tone: "neutral",
       items: [
-        { label: "Agenda de hoy", action: () => openStubModal("agenda") },
-        { label: "Programar nuevo turno", action: () => openStubModal("turno") },
-        { label: "Configurar horarios", action: () => openStubModal("horarios") },
-        { label: "Gestión de pagos", action: () => openStubModal("pagos") },
-      ],
-    },
-    {
-      section: "Más",
-      items: [
-        { label: "Perfil médico", action: () => openStubModal("perfil") },
+        { label: "Agenda de hoy", icon: "agenda", action: () => openStubModal("agenda") },
+        { label: "Programar nuevo turno", icon: "turno", action: () => openStubModal("turno") },
+        { label: "Configurar horarios", icon: "horarios", action: () => openStubModal("horarios") },
+        { label: "Gestión de pagos", icon: "pagos", action: () => openStubModal("pagos") },
       ],
     },
   ];
@@ -135,8 +166,8 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
           zIndex: 40,
           height: "100vh",
           width: "18rem",
-          backgroundColor: "#f0fdfa",
-          borderRight: "1px solid rgba(204,251,241,0.6)",
+          backgroundColor: "#f4fbfc",
+          borderRight: "1px solid rgba(207,234,237,0.9)",
           display: "flex",
           flexDirection: "column",
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
@@ -144,53 +175,53 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
           pointerEvents: isOpen ? "auto" : "none",
         }}
       >
-        <div className="p-4 border-b border-rene-aquaDark/40 shrink-0" style={{ backgroundColor: "rgba(204,251,241,0.3)" }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-lg text-gray-800">Rene</span>
+        <div className="px-3 pt-2 pb-3 border-b border-rene-aquaDark/35 shrink-0 bg-gradient-to-b from-white via-white to-rene-brand/10 shadow-[0_1px_0_rgba(207,234,237,0.8)]">
+          <div className="flex justify-end mb-2">
             <button
               onClick={onClose}
-              className="p-1.5 text-gray-600 hover:text-gray-800 rounded-lg"
+              className="p-1.5 text-gray-500 hover:text-gray-800 rounded-lg hover:bg-white/90"
               aria-label="Cerrar panel"
             >
               <span className="text-xl leading-none">×</span>
             </button>
           </div>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-rene-green flex items-center justify-center text-white font-semibold shrink-0">
-              {(session?.user?.name?.[0] ?? session?.user?.email?.[0] ?? "U").toUpperCase()}
+          <div className="flex rounded-xl border border-rene-aquaDark/40 bg-white shadow-sm divide-x divide-rene-aquaDark/25 overflow-hidden text-center">
+            <div className="flex-1 py-2.5 px-2 min-w-0">
+              <p className="text-xs font-medium text-gray-600 leading-tight mb-0.5">Consultas hoy</p>
+              <p className="text-2xl font-bold text-rene-greenDark tabular-nums leading-none tracking-tight">
+                {stats.consultations_today}
+              </p>
             </div>
-            <div>
-              <p className="font-medium text-gray-800 text-sm">{session?.user?.name ?? "Usuario"}</p>
-              <p className="text-gray-600 text-xs">{session?.user?.email ?? "Profesional de salud"}</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-lg p-2.5 text-center border border-rene-aquaDark/30" style={{ backgroundColor: "rgba(255,255,255,0.8)" }}>
-              <p className="text-xs text-gray-600 font-medium">Consultas Hoy</p>
-              <p className="text-lg font-bold text-gray-800">{stats.consultations_today}</p>
-            </div>
-            <div className="flex-1 rounded-lg p-2.5 text-center border border-rene-aquaDark/30" style={{ backgroundColor: "rgba(255,255,255,0.8)" }}>
-              <p className="text-xs text-gray-600 font-medium">Pacientes</p>
-              <p className="text-lg font-bold text-gray-800">{stats.total_patients}</p>
+            <div className="flex-1 py-2.5 px-2 min-w-0">
+              <p className="text-xs font-medium text-gray-600 leading-tight mb-0.5">Pacientes</p>
+              <p className="text-2xl font-bold text-rene-greenDark tabular-nums leading-none tracking-tight">
+                {stats.total_patients}
+              </p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-2">
+        <nav className="flex-1 overflow-y-auto overscroll-contain py-2 px-2 pb-4 [scrollbar-gutter:stable] space-y-3">
           {menuItems.map((group) => (
-            <div key={group.section} className="mb-4">
-              <h3 className="px-3 py-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider">
-                {group.section}
-              </h3>
+            <div key={group.section} className={`rounded-lg p-1.5 ${TONE_CARD[group.tone]}`}>
+              <div className="flex items-center gap-2 px-2 pb-1.5 mb-1 border-b border-rene-aquaDark/20">
+                <span className={`h-2 w-2 rounded-full shrink-0 ${TONE_DOT[group.tone]}`} aria-hidden />
+                <h3 className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
+                  {group.section}
+                </h3>
+              </div>
               <ul className="space-y-0.5">
                 {group.items.map((item) => (
                   <li key={item.label}>
                     <button
+                      type="button"
                       onClick={() => handleItemClick(item.action)}
-                      className="w-full px-3 py-2.5 text-left text-sm font-medium text-gray-800 rounded-lg border border-rene-green/30 hover:bg-rene-green hover:text-white hover:border-rene-green transition-colors"
-                      style={{ backgroundColor: "rgba(20,184,166,0.1)" }}
+                      className="group flex w-full gap-2.5 items-start rounded-md px-2 py-2 text-left text-sm text-gray-800 transition-colors hover:bg-rene-brand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rene-green/50"
                     >
-                      {item.label}
+                      <span className="mt-0.5 opacity-90 group-hover:opacity-100">
+                        <SidebarMenuIcon name={item.icon} />
+                      </span>
+                      <span className="min-w-0 flex-1 leading-snug font-medium">{item.label}</span>
                     </button>
                   </li>
                 ))}
@@ -234,9 +265,6 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
         <p className="text-gray-600">En desarrollo</p>
       </Modal>
       <Modal isOpen={openModal === "pagos"} onClose={closeModal} title="Gestión de pagos">
-        <p className="text-gray-600">En desarrollo</p>
-      </Modal>
-      <Modal isOpen={openModal === "perfil"} onClose={closeModal} title="Perfil médico">
         <p className="text-gray-600">En desarrollo</p>
       </Modal>
     </>
