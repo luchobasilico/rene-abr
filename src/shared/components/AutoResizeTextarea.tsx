@@ -1,11 +1,16 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useLayoutEffect } from "react";
 
 interface AutoResizeTextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+}
+
+function syncHeight(el: HTMLTextAreaElement) {
+  el.style.height = "0px";
+  el.style.height = `${el.scrollHeight}px`;
 }
 
 export function AutoResizeTextarea({
@@ -16,11 +21,13 @@ export function AutoResizeTextarea({
 }: AutoResizeTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    syncHeight(el);
+    const onResize = () => syncHeight(el);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, [value]);
 
   return (
@@ -29,7 +36,7 @@ export function AutoResizeTextarea({
       value={value}
       onChange={onChange}
       rows={1}
-      className={`min-h-[2.5rem] resize-none overflow-hidden ${className}`}
+      className={`block w-full min-h-[1.25rem] max-h-none resize-none overflow-hidden self-start ${className}`}
       {...props}
     />
   );

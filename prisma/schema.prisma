@@ -25,6 +25,13 @@ model Patient {
   name           String
   birthDate      DateTime?
   document       String?
+  sex            String?
+  coverage       String?
+  affiliateNumber String?
+  plan           String?
+  phone          String?
+  email          String?
+  address        String?
   professionalId String
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   visits         Visit[]

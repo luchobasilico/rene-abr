@@ -18,7 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       const desktop = window.innerWidth >= 1024;
       setIsMobile(mobile);
       setIsDesktop(desktop);
-      if (!mobile) setPanelOpen(true);
+      setPanelOpen(desktop);
     };
     check();
     window.addEventListener("resize", check);

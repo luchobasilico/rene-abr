@@ -21,11 +21,19 @@ interface VisitDetail {
 interface ConsultationState {
   visits: VisitSummary[];
   selectedVisit: VisitDetail | null;
+  processing: {
+    active: boolean;
+    stage: "idle" | "uploading" | "transcribing" | "generating" | "finalizing" | "error";
+    message?: string;
+    patientLabel?: string;
+  };
   currentTime: number;
   selectedSegmentId: string | null;
   highlightedNoteBlock: string | null;
   setVisits: (v: VisitSummary[]) => void;
   setSelectedVisit: (v: VisitDetail | null) => void;
+  setProcessing: (p: ConsultationState["processing"]) => void;
+  clearProcessing: () => void;
   setCurrentTime: (t: number) => void;
   setSelectedSegment: (id: string | null) => void;
   setHighlightedNoteBlock: (block: string | null) => void;
@@ -34,11 +42,14 @@ interface ConsultationState {
 export const useConsultationStore = create<ConsultationState>((set) => ({
   visits: [],
   selectedVisit: null,
+  processing: { active: false, stage: "idle" },
   currentTime: 0,
   selectedSegmentId: null,
   highlightedNoteBlock: null,
   setVisits: (visits) => set({ visits }),
   setSelectedVisit: (selectedVisit) => set({ selectedVisit }),
+  setProcessing: (processing) => set({ processing }),
+  clearProcessing: () => set({ processing: { active: false, stage: "idle" } }),
   setCurrentTime: (currentTime) => set({ currentTime }),
   setSelectedSegment: (selectedSegmentId) => set({ selectedSegmentId }),
   setHighlightedNoteBlock: (highlightedNoteBlock) => set({ highlightedNoteBlock }),

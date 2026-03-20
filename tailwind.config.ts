@@ -30,8 +30,8 @@ const config: Config = {
         rene: {
           aqua: "#f0fdfa",
           aquaDark: "#ccfbf1",
-          green: "#14b8a6",
-          greenDark: "#0d9488",
+          green: "#2dd4bf",
+          greenDark: "#14b8a6",
         },
       },
     },

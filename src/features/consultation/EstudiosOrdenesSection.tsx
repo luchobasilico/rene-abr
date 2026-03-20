@@ -97,8 +97,8 @@ export function EstudiosOrdenesSection({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 overflow-auto min-h-0">
+    <div className="flex flex-col">
+      <div>
         {prescriptions.length > 0 && (
           <div className="mb-3">
             <h4 className="text-sm font-medium text-medical-medication mb-2">Medicación</h4>

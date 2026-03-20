@@ -56,6 +56,43 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function parsePollingIntervalMs(): number {
+  const raw = process.env.ASSEMBLYAI_POLLING_INTERVAL_MS;
+  if (!raw) return 800;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 200 ? n : 800;
+}
+
+/** Sin diarización suele ser más rápido; el rol medico/paciente será menos fiable. */
+function useSpeakerLabels(): boolean {
+  const v = process.env.ASSEMBLYAI_SPEAKER_LABELS?.toLowerCase();
+  if (v === "0" || v === "false" || v === "no") return false;
+  return true;
+}
+
+function segmentsFromPlainText(
+  transcript: { text?: string | null; audio_duration?: number | null }
+): TranscriptSegment[] {
+  const text = transcript.text?.trim() ?? "";
+  if (!text) {
+    throw new Error("Transcription failed: empty text");
+  }
+  const durationSec =
+    typeof transcript.audio_duration === "number" && transcript.audio_duration > 0
+      ? Math.round(transcript.audio_duration)
+      : 0;
+  return postProcess([
+    {
+      speaker: "medico",
+      timestampStart: 0,
+      timestampEnd: durationSec,
+      text,
+      confidence: 1,
+      lowConfidence: false,
+    },
+  ]);
+}
+
 export async function transcribe(audioBuffer: Buffer): Promise<TranscriptSegment[]> {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
   if (!apiKey) {
@@ -67,22 +104,31 @@ export async function transcribe(audioBuffer: Buffer): Promise<TranscriptSegment
   }
 
   const client = new AssemblyAI({ apiKey });
+  const speakerLabels = useSpeakerLabels();
+  const transcribeOptions = { pollingInterval: parsePollingIntervalMs() };
 
   const maxRetries = 3;
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const transcript = await client.transcripts.transcribe({
-        audio: audioBuffer,
-        speech_models: ["universal-2"],
-        speaker_labels: true,
-        language_code: "es",
-        speakers_expected: 2,
-      });
+      const transcript = await client.transcripts.transcribe(
+        {
+          audio: audioBuffer,
+          speech_models: ["universal-2"],
+          speaker_labels: speakerLabels,
+          language_code: "es",
+          ...(speakerLabels ? { speakers_expected: 2 } : {}),
+        },
+        transcribeOptions
+      );
 
-      if (!transcript.utterances || transcript.status === "error") {
+      if (transcript.status === "error") {
         throw new Error(transcript.error ?? "Transcription failed");
+      }
+
+      if (!transcript.utterances?.length) {
+        return segmentsFromPlainText(transcript);
       }
 
       const speakerMap = new Map<string, TranscriptSegment["speaker"]>();

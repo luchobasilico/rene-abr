@@ -158,7 +158,7 @@ export default function LoginPage() {
             style={{
               width: "100%",
               padding: "0.5rem 1rem",
-              backgroundColor: "#14b8a6",
+              backgroundColor: "#2dd4bf",
               color: "white",
               border: "none",
               borderRadius: "0.5rem",
@@ -181,7 +181,7 @@ export default function LoginPage() {
           }}
         >
           ¿No tenés cuenta?{" "}
-          <a href="/registro" style={{ color: "#14b8a6", fontWeight: 500 }}>
+          <a href="/registro" style={{ color: "#2dd4bf", fontWeight: 500 }}>
             Registrate
           </a>
         </p>

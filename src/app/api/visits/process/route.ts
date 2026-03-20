@@ -11,6 +11,7 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const audio = formData.get("audio") as File | null;
+    const patientId = formData.get("patientId");
 
     if (!audio || !(audio instanceof Blob)) {
       return NextResponse.json(
@@ -22,9 +23,48 @@ export async function POST(request: Request) {
     const arrayBuffer = await audio.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const result = await processMedicalVisit(buffer, professional.id);
+    const selectedPatientId =
+      typeof patientId === "string" && patientId.trim() ? patientId.trim() : undefined;
 
-    return NextResponse.json(result);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const send = (payload: unknown) => {
+          controller.enqueue(encoder.encode(`${JSON.stringify(payload)}\n`));
+        };
+
+        void (async () => {
+          try {
+            const result = await processMedicalVisit(
+              buffer,
+              professional.id,
+              selectedPatientId,
+              (event) => {
+                send({ type: "progress", ...event });
+              }
+            );
+            send({ type: "done", result });
+          } catch (err) {
+            const raw = err instanceof Error ? err.message : "Error al procesar consulta";
+            const message = raw.toLowerCase().includes("upload failed")
+              ? "Error al subir el audio. Probá de nuevo en unos segundos. Si persiste, verificá que la grabación tenga al menos 10 segundos."
+              : raw;
+            send({ type: "error", message });
+          } finally {
+            controller.close();
+          }
+        })();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (err) {
     console.error("processMedicalVisit error:", err);
     let message = err instanceof Error ? err.message : "Error al procesar consulta";

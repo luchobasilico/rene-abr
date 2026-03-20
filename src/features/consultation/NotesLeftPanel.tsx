@@ -23,6 +23,9 @@ interface NotesLeftPanelProps {
       text: string;
     }>;
   } | null;
+  /** Procesamiento en curso (esqueleto / hints en el editor SOAP). */
+  isProcessing?: boolean;
+  processingStage?: "idle" | "uploading" | "transcribing" | "generating" | "finalizing" | "error";
 }
 
 type TabId = "nota" | "transcripcion" | "evidencia";
@@ -33,7 +36,21 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: "evidencia", label: "Evidencia enlazada" },
 ];
 
-export function NotesLeftPanel({ soap, onSoapChange, onSave, transcript }: NotesLeftPanelProps) {
+function speakerLabel(speaker: string): string {
+  const s = speaker.toLowerCase();
+  if (s === "medico" || s === "médico") return "Médico";
+  if (s === "paciente") return "Paciente";
+  return speaker;
+}
+
+export function NotesLeftPanel({
+  soap,
+  onSoapChange,
+  onSave,
+  transcript,
+  isProcessing = false,
+  processingStage = "idle",
+}: NotesLeftPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("nota");
   const hasTranscript = transcript?.segments && transcript.segments.length > 0;
   const canShowEvidence = hasTranscript && soap && Object.values(soap).some((v) => v?.trim());
@@ -58,7 +75,13 @@ export function NotesLeftPanel({ soap, onSoapChange, onSave, transcript }: Notes
       <div className="flex-1 overflow-hidden min-h-0">
         {activeTab === "nota" && (
           <div className="h-full overflow-auto p-4">
-            <SOAPEditor soap={soap} onChange={onSoapChange} onSave={onSave} />
+            <SOAPEditor
+              soap={soap}
+              onChange={onSoapChange}
+              onSave={onSave}
+              pendingGeneration={isProcessing}
+              processingStage={processingStage}
+            />
           </div>
         )}
         {activeTab === "transcripcion" && (
@@ -67,7 +90,8 @@ export function NotesLeftPanel({ soap, onSoapChange, onSave, transcript }: Notes
               <div className="text-sm text-gray-700 space-y-1">
                 {transcript!.segments.map((s, i) => (
                   <p key={i}>
-                    <span className="font-medium text-gray-500">{s.speaker}:</span> {s.text}
+                    <span className="font-medium text-gray-500">{speakerLabel(s.speaker)}:</span>{" "}
+                    {s.text}
                   </p>
                 ))}
               </div>

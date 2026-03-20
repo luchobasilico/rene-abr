@@ -18,17 +18,28 @@ function getOpenAI() {
 
 const SOAP_SYSTEM = `Eres un asistente médico que genera notas clínicas en formato SOAP para consultorios en Argentina.
 Genera texto en español médico estándar argentino.
+REGLA CRÍTICA: Usá SOLO información explícita en la transcripción. Si no hay datos clínicos (silencio, audio vacío, texto ininteligible o irrelevante), NO inventes síntomas, diagnósticos ni planes: devolvé cadenas vacías "" o un texto breve en Subjetivo indicando que no hubo información transcrita. Jamás fabriques un caso clínico de ejemplo.
 Responde ÚNICAMENTE con JSON válido, sin markdown ni texto adicional.`;
 
-const SOAP_USER = (transcript: string) => `Transcripción de una consulta médica (con etiquetas medico/paciente):
+const SOAP_BLOCK_USER = (
+  transcript: string,
+  block: "subjective" | "objective" | "assessment" | "plan",
+  currentSoap?: Partial<SOAPNote>
+) => `Transcripción de una consulta médica (con etiquetas medico/paciente):
 
 ${transcript}
 
-Genera la nota SOAP. Responde con este JSON exacto:
-{"subjective":"","objective":"","assessment":"","plan":""}`;
+Nota SOAP parcial actual (puede estar vacía):
+${JSON.stringify(currentSoap ?? {})}
+
+Genera SOLO el bloque "${block}" con contenido clínico consistente con el resto y con la transcripción.
+Si la transcripción no aporta datos para este bloque, devolvé {"text":""} sin inventar.
+Responde con este JSON exacto:
+{"text":""}`;
 
 const PRESCRIPTIONS_SYSTEM = `Eres un asistente médico. Extrae las recetas de la transcripción.
 Usa nombres genéricos de fármacos cuando sea posible.
+No inventes medicación si no aparece en la transcripción.
 Responde ÚNICAMENTE con JSON válido.`;
 
 const PRESCRIPTIONS_USER = (transcript: string) => `Transcripción:
@@ -38,6 +49,7 @@ Extrae las recetas. Responde con JSON: {"prescriptions":[{"drug":"","dose":"","f
 Si no hay recetas, devuelve {"prescriptions":[]}`;
 
 const ORDERS_SYSTEM = `Eres un asistente médico. Extrae órdenes médicas: laboratorio, imágenes, interconsultas.
+No inventes órdenes que no figuren en la transcripción.
 Responde ÚNICAMENTE con JSON válido.`;
 
 const ORDERS_USER = (transcript: string) => `Transcripción:
@@ -62,6 +74,18 @@ function formatTranscript(segments: TranscriptSegment[]): string {
     .join("\n");
 }
 
+/** Evita llamar al LLM con silencio o audio inútil: el modelo suele alucinar un caso clínico. */
+export function hasUsableClinicalTranscript(segments: TranscriptSegment[]): boolean {
+  const text = segments
+    .map((s) => s.text.trim())
+    .filter(Boolean)
+    .join(" ");
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length < 5) return false;
+  if (text.replace(/\s+/g, " ").trim().length < 28) return false;
+  return true;
+}
+
 async function callLLM<T>(system: string, user: string): Promise<T> {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
@@ -78,15 +102,17 @@ async function callLLM<T>(system: string, user: string): Promise<T> {
   return JSON.parse(content) as T;
 }
 
-export async function generateSOAP(segments: TranscriptSegment[]): Promise<SOAPNote> {
+export async function generateSOAPBlock(
+  segments: TranscriptSegment[],
+  block: "subjective" | "objective" | "assessment" | "plan",
+  currentSoap?: Partial<SOAPNote>
+): Promise<string> {
   const transcript = formatTranscript(segments);
-  const result = await callLLM<SOAPNote>(SOAP_SYSTEM, SOAP_USER(transcript));
-  return {
-    subjective: result.subjective ?? "",
-    objective: result.objective ?? "",
-    assessment: result.assessment ?? "",
-    plan: result.plan ?? "",
-  };
+  const result = await callLLM<{ text: string }>(
+    SOAP_SYSTEM,
+    SOAP_BLOCK_USER(transcript, block, currentSoap)
+  );
+  return result.text ?? "";
 }
 
 export async function generatePrescriptions(segments: TranscriptSegment[]): Promise<Prescription[]> {
@@ -175,30 +201,4 @@ export function buildLinkedEvidence(
     }
   }
   return evidencias;
-}
-
-export async function generateClinicalOutputs(segments: TranscriptSegment[]) {
-  const [soap, prescriptions, orders] = await Promise.all([
-    generateSOAP(segments),
-    generatePrescriptions(segments),
-    generateMedicalOrders(segments),
-  ]);
-
-  const [patientSummary, referral, justification] = await Promise.all([
-    generatePatientSummary(segments, soap),
-    generateReferral(segments, soap),
-    generateJustification(segments, soap),
-  ]);
-
-  const evidencias = buildLinkedEvidence(soap, segments);
-
-  return {
-    soap,
-    prescriptions,
-    orders,
-    patientSummary,
-    referral,
-    justification,
-    evidencias,
-  };
 }

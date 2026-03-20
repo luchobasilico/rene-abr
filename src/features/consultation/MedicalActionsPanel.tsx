@@ -30,7 +30,7 @@ export function MedicalActionsPanel({
   const [activeTab, setActiveTab] = useState<TabId>("estudios");
 
   return (
-    <div className="bg-white border border-rene-aquaDark/40 rounded-lg overflow-hidden flex flex-col h-full">
+    <div className="bg-white border border-rene-aquaDark/40 rounded-lg overflow-hidden flex flex-col">
       <div className="flex border-b border-rene-aquaDark/40 shrink-0 overflow-x-auto">
         {TABS.map(({ id, label }) => (
           <button
@@ -46,7 +46,7 @@ export function MedicalActionsPanel({
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-auto p-4 min-h-0">
+      <div className="p-4">
         {activeTab === "estudios" && (
           <EstudiosOrdenesSection
             prescriptions={prescriptions}

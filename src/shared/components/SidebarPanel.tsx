@@ -141,6 +141,7 @@ export function SidebarPanel({ isOpen, onClose, onItemClick }: SidebarPanelProps
           flexDirection: "column",
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.3s ease-out",
+          pointerEvents: isOpen ? "auto" : "none",
         }}
       >
         <div className="p-4 border-b border-rene-aquaDark/40 shrink-0" style={{ backgroundColor: "rgba(204,251,241,0.3)" }}>
