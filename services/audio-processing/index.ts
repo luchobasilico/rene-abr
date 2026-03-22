@@ -1,4 +1,5 @@
 import { AssemblyAI } from "assemblyai";
+import OpenAI from "openai";
 import type { TranscriptSegment } from "@shared-types";
 
 const FILLERS = [
@@ -56,6 +57,19 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type AsrProvider = "assemblyai" | "openai" | "mock";
+
+function resolveAsrProvider(): AsrProvider {
+  const raw = process.env.ASR_PROVIDER?.trim().toLowerCase();
+  if (raw === "mock") return "mock";
+  if (raw === "openai") return "openai";
+  return "assemblyai";
+}
+
+function getOpenAiAsrModel(): string {
+  return process.env.ASR_OPENAI_MODEL?.trim() || "whisper-1";
+}
+
 function parsePollingIntervalMs(): number {
   const raw = process.env.ASSEMBLYAI_POLLING_INTERVAL_MS;
   if (!raw) return 800;
@@ -93,10 +107,60 @@ function segmentsFromPlainText(
   ]);
 }
 
+function segmentsFromMockTranscript(): TranscriptSegment[] {
+  const configured = process.env.ASR_MOCK_TRANSCRIPT_TEXT?.trim();
+  if (!configured) {
+    // En modo mock sin texto explícito no inventamos contenido clínico.
+    // Devolvemos transcripción vacía para que el pipeline marque audio no utilizable.
+    return [];
+  }
+  const text = configured;
+
+  return postProcess([
+    {
+      speaker: "medico",
+      timestampStart: 0,
+      timestampEnd: 45,
+      text,
+      confidence: 1,
+      lowConfidence: false,
+    },
+  ]);
+}
+
 export async function transcribe(audioBuffer: Buffer): Promise<TranscriptSegment[]> {
+  const provider = resolveAsrProvider();
+  if (provider === "mock") {
+    return segmentsFromMockTranscript();
+  }
+
+  if (provider === "openai") {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is required para ASR_PROVIDER=openai");
+    }
+    if (!audioBuffer || audioBuffer.length < 1000) {
+      throw new Error("El audio está vacío o es muy corto. Grabá al menos unos segundos.");
+    }
+
+    const client = new OpenAI({ apiKey });
+    const file = new File([audioBuffer], "consulta.webm", { type: "audio/webm" });
+    const response = await client.audio.transcriptions.create({
+      file,
+      model: getOpenAiAsrModel(),
+      language: "es",
+      response_format: "verbose_json",
+    });
+
+    return segmentsFromPlainText({
+      text: response.text ?? "",
+      audio_duration: typeof response.duration === "number" ? response.duration : null,
+    });
+  }
+
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
   if (!apiKey) {
-    throw new Error("ASSEMBLYAI_API_KEY is required");
+    throw new Error("ASSEMBLYAI_API_KEY is required (o usar ASR_PROVIDER=openai/mock)");
   }
 
   if (!audioBuffer || audioBuffer.length < 1000) {
